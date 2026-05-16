@@ -1,0 +1,8 @@
+Models directory — place the following .pkl files here when available:
+- fraud_random_forest.pkl
+- fraud_xgboost.pkl
+- fraud_isolation_forest.pkl
+- segmentation_model.pkl
+- segmentation_scaler.pkl
+- recommendation_model.pkl
+- feature_metadata.json

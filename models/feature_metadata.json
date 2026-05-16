@@ -1,0 +1,53 @@
+{
+  "fraud_features": [
+    "amount",
+    "hour",
+    "device_mismatch",
+    "geo_risk_score",
+    "merchant_risk_score",
+    "transaction_velocity",
+    "account_age_months",
+    "credit_score",
+    "balance_before",
+    "balance_after",
+    "merchant_category_encoded"
+  ],
+  "segmentation_features": [
+    "monthly_income",
+    "savings_ratio",
+    "account_age_months",
+    "credit_score",
+    "avg_balance"
+  ],
+  "recommendation_features": [
+    "monthly_income",
+    "savings_ratio",
+    "account_age_months",
+    "credit_score",
+    "avg_balance",
+    "cluster"
+  ],
+  "cluster_names": {
+    "0": "High Value Professional",
+    "1": "Young Saver",
+    "2": "SME Growth Customer",
+    "3": "Premium Banking User",
+    "4": "Risk-Sensitive Spender"
+  },
+  "merchant_categories": [
+    "Groceries",
+    "Travel",
+    "Luxury",
+    "Electronics",
+    "Restaurants",
+    "Fuel",
+    "Shopping",
+    "Healthcare",
+    "Utilities",
+    "Entertainment",
+    "Crypto Exchange",
+    "Jewelry"
+  ],
+  "model_version": "v3.0_enterprise_scale",
+  "training_date": "2026-05-16 10:10:30.140411"
+}
