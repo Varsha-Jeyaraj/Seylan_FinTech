@@ -1,5 +1,12 @@
-import { FinancialProduct } from './supabase';
-import { ClusterCentroid } from './clustering';
+export type FinancialProduct = {
+  id: string;
+  name: string;
+  type: 'Credit Card' | 'Loan Scheme' | 'Deposit';
+  description: string;
+  min_income?: number;
+  features: string[];
+  image_url?: string;
+};
 
 // Mock database of Seylan Bank Products
 export const SEYLAN_PRODUCTS: FinancialProduct[] = [
