@@ -78,7 +78,7 @@ export default function RiskScoreGauge({
             cy={cy}
             r={cfg.r}
             fill="none"
-            stroke="#1e293b"
+            stroke="var(--border)"
             strokeWidth={cfg.stroke}
             strokeDasharray={`${arcLen} ${circumference - arcLen}`}
             strokeLinecap="round"
@@ -103,12 +103,12 @@ export default function RiskScoreGauge({
             {pct}
           </span>
           {showLabel && (
-            <span className={`${cfg.labelSize} font-medium text-slate-400`}>
+            <span className={`${cfg.labelSize} font-medium text-muted-foreground`}>
               {label ?? severity}
             </span>
           )}
           {confidence !== undefined && (
-            <span className="text-[9px] text-slate-600 mt-0.5">
+            <span className="mt-0.5 text-[9px] text-muted-foreground/70">
               {(confidence * 100).toFixed(0)}% conf.
             </span>
           )}

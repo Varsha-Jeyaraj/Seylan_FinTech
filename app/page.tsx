@@ -1,229 +1,224 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Transaction, User, Account } from '@/lib/supabase';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import Link from 'next/link'
+import {
+  AlertTriangle,
+  ArrowRight,
+  BarChart3,
+  Brain,
+  Database,
+  Play,
+  RefreshCw,
+  Shield,
+  ShieldCheck,
+  TrendingUp,
+  Users,
+  Wallet,
+} from 'lucide-react'
+import { useState } from 'react'
+import { PageHeader } from '@/components/PageHeader'
+import { StatCard } from '@/components/StatCard'
+import ModelStatusBar from '@/components/ModelStatusBar'
+import FraudAlerts from '@/components/FraudAlerts'
+import TransactionMonitor from '@/components/TransactionMonitor'
+import { useDashboardData } from '@/lib/use-dashboard-data'
 
-// Existing components
-import TransactionMonitor from '@/components/TransactionMonitor';
-import FraudAlerts from '@/components/FraudAlerts';
-import CustomerSegments from '@/components/CustomerSegments';
-import DashboardHeader from '@/components/DashboardHeader';
-import TransferRequestsPanel from '@/components/TransferRequestsPanel';
-import FraudEventsPanel from '@/components/FraudEventsPanel';
+const modules = [
+  {
+    title: 'AI Intelligence',
+    description:
+      'Realtime AI risk stream, fraud heatmap, transfer timeline and enterprise opportunities.',
+    href: '/intelligence',
+    icon: Brain,
+    accent: 'from-violet-500/20 to-fuchsia-500/10',
+  },
+  {
+    title: 'Fraud Operations',
+    description:
+      'Live fraud events, transfer queue, and active alerts for the operations team.',
+    href: '/fraud',
+    icon: Shield,
+    accent: 'from-rose-500/20 to-orange-500/10',
+  },
+  {
+    title: 'Analytics',
+    description:
+      'Behaviour analytics and customer segmentation for strategic decision-making.',
+    href: '/analytics',
+    icon: BarChart3,
+    accent: 'from-sky-500/20 to-blue-500/10',
+  },
+  {
+    title: 'Demo Mode',
+    description:
+      'Interactive simulation tools for walkthroughs and stakeholder presentations.',
+    href: '/demo',
+    icon: Play,
+    accent: 'from-amber-500/20 to-yellow-500/10',
+  },
+] as const
 
-// New AI-enhanced components
-import RealtimeIntelligence from '@/components/RealtimeIntelligence';
-import FraudHeatmap from '@/components/FraudHeatmap';
-import BehaviourAnalytics from '@/components/BehaviourAnalytics';
-import TransferTimeline from '@/components/TransferTimeline';
-import DemoModePanel from '@/components/DemoModePanel';
-import AICopilot from '@/components/AICopilot';
-import ModelStatusBar from '@/components/ModelStatusBar';
-import EnterpriseOpportunityPanel from '@/components/EnterpriseOpportunityPanel';
-import { Brain, Activity, Shield, BarChart3, Play } from 'lucide-react';
+export default function OverviewPage() {
+  const { stats, transactions, fraudAlerts, loading } = useDashboardData()
+  const [seeding, setSeeding] = useState(false)
+  const [generating, setGenerating] = useState(false)
 
-export default function Dashboard() {
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    totalAccounts: 0,
-    totalTransactions: 0,
-    fraudDetected: 0,
-  });
-
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [fraudAlerts, setFraudAlerts] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadDashboardData();
-    const cleanup = setupRealtimeListeners();
-    return cleanup;
-  }, []);
-
-  async function loadDashboardData() {
+  const onSeed = async () => {
     try {
-      setLoading(true);
-
-      const [users, accounts, txData] = await Promise.all([
-        supabase.from('users').select('*'),
-        supabase.from('accounts').select('*'),
-        supabase.from('transactions').select('*').order('timestamp', { ascending: false }).limit(100),
-      ]);
-
-      const fraudCount = txData.data?.filter((t) => t.is_fraud).length || 0;
-
-      setStats({
-        totalUsers: users.data?.length || 0,
-        totalAccounts: accounts.data?.length || 0,
-        totalTransactions: txData.data?.length || 0,
-        fraudDetected: fraudCount,
-      });
-
-      setUsers(users.data || []);
-      setAccounts(accounts.data || []);
-      setTransactions(txData.data || []);
-      setFraudAlerts(txData.data?.filter((t) => t.fraud_score > 0.2) || []);
-    } catch (error) {
-      console.error('[Dashboard] Error loading data:', error);
+      setSeeding(true)
+      await fetch('/api/seed', { method: 'POST' }).then((r) => r.json())
+      location.reload()
     } finally {
-      setLoading(false);
+      setSeeding(false)
     }
   }
 
-  function setupRealtimeListeners() {
-    const channel = supabase
-      .channel('dashboard-transactions')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'transactions' },
-        (payload) => {
-          const newTx = payload.new as Transaction;
-          setTransactions((prev) => [newTx, ...prev].slice(0, 100));
-          if (newTx.fraud_score > 0.2) {
-            setFraudAlerts((prev) => [newTx, ...prev]);
-            setStats((prev) => ({ ...prev, fraudDetected: prev.fraudDetected + 1 }));
-          }
-          setStats((prev) => ({ ...prev, totalTransactions: prev.totalTransactions + 1 }));
-        }
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
+  const onGenerate = async () => {
+    try {
+      setGenerating(true)
+      await fetch('/api/transactions/generate', { method: 'POST' }).then((r) => r.json())
+      location.reload()
+    } finally {
+      setGenerating(false)
+    }
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      <DashboardHeader stats={stats} />
+  const fraudTone = stats.fraudDetected > 0 ? 'danger' : 'success'
 
-      {/* Model status bar */}
-      <div className="border-b border-slate-800/60 bg-slate-900/40 backdrop-blur-sm">
-        <div className="mx-auto max-w-7xl px-4 py-2 sm:px-6 lg:px-8">
+  return (
+    <div>
+      <PageHeader
+        eyebrow="Workspace"
+        title="Overview"
+        description="Real-time fraud detection and customer intelligence operations for Seylan Bank."
+        actions={
+          <>
+            <Link
+              href="/crm"
+              target="_blank"
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+              <Users className="h-3.5 w-3.5" />
+              Open CRM
+            </Link>
+            <button
+              type="button"
+              onClick={onGenerate}
+              disabled={generating}
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:opacity-60"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${generating ? 'animate-spin' : ''}`} />
+              Generate transactions
+            </button>
+            <button
+              type="button"
+              onClick={onSeed}
+              disabled={seeding}
+              className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:opacity-95 disabled:opacity-60"
+            >
+              <Database className={`h-3.5 w-3.5 ${seeding ? 'animate-pulse' : ''}`} />
+              Seed data
+            </button>
+          </>
+        }
+      />
+
+      {/* Status strip */}
+      <div className="border-b border-border bg-background/40">
+        <div className="mx-auto flex max-w-7xl items-center px-4 py-2.5 sm:px-6 lg:px-8">
           <ModelStatusBar />
         </div>
       </div>
 
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="bg-slate-900 border border-slate-700 h-9">
-            <TabsTrigger value="overview" className="text-xs data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400 flex items-center gap-1.5">
-              <Activity className="h-3.5 w-3.5" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="intelligence" className="text-xs data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400 flex items-center gap-1.5">
-              <Brain className="h-3.5 w-3.5" />
-              AI Intelligence
-            </TabsTrigger>
-            <TabsTrigger value="fraud" className="text-xs data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400 flex items-center gap-1.5">
-              <Shield className="h-3.5 w-3.5" />
-              Fraud Operations
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="text-xs data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400 flex items-center gap-1.5">
-              <BarChart3 className="h-3.5 w-3.5" />
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger value="demo" className="text-xs data-[state=active]:bg-violet-700 data-[state=active]:text-white text-slate-400 flex items-center gap-1.5">
-              <Play className="h-3.5 w-3.5" />
-              Demo Mode
-              <Badge className="bg-violet-800 text-violet-200 text-[9px] py-0 px-1 ml-1">LIVE</Badge>
-            </TabsTrigger>
-          </TabsList>
+      <section className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+        {/* KPI grid */}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            label="Total Users"
+            value={stats.totalUsers.toLocaleString()}
+            hint="Active customer base"
+            icon={Users}
+            tone="info"
+            loading={loading}
+          />
+          <StatCard
+            label="Active Accounts"
+            value={stats.totalAccounts.toLocaleString()}
+            hint="Across all products"
+            icon={Wallet}
+            tone="primary"
+            loading={loading}
+          />
+          <StatCard
+            label="Transactions"
+            value={stats.totalTransactions.toLocaleString()}
+            hint="Last 24 hours"
+            icon={TrendingUp}
+            tone="info"
+            loading={loading}
+          />
+          <StatCard
+            label="Fraud Alerts"
+            value={stats.fraudDetected.toLocaleString()}
+            hint={
+              stats.fraudDetected > 0
+                ? 'Requires analyst attention'
+                : 'No active threats detected'
+            }
+            icon={stats.fraudDetected > 0 ? AlertTriangle : ShieldCheck}
+            tone={fraudTone}
+            loading={loading}
+          />
+        </div>
 
-          {/* ── Overview Tab ──────────────────────────────────────────────── */}
-          <TabsContent value="overview" className="space-y-6 mt-0">
-            {/* Fraud alerts */}
-            <FraudAlerts alerts={fraudAlerts} isLoading={loading} />
-
-            {/* Transaction monitor */}
-            <TransactionMonitor transactions={transactions} isLoading={loading} />
-
-            {/* Transfer + Fraud Events */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <TransferRequestsPanel />
-              <FraudEventsPanel />
-            </div>
-
-            {/* Customer segments */}
-            <CustomerSegments />
-
-            {/* Enterprise growth targeting */}
-            <EnterpriseOpportunityPanel
-              users={users}
-              accounts={accounts}
-              transactions={transactions}
-              isLoading={loading}
-            />
-          </TabsContent>
-
-          {/* ── AI Intelligence Tab ───────────────────────────────────────── */}
-          <TabsContent value="intelligence" className="space-y-6 mt-0">
-            {/* Realtime AI stream */}
+        {/* Module quick links */}
+        <div>
+          <div className="mb-3 flex items-end justify-between">
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Brain className="h-4 w-4 text-violet-400" />
-                <h2 className="text-sm font-semibold text-white">Realtime AI Intelligence</h2>
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              </div>
-              <RealtimeIntelligence initialTransactions={transactions} />
+              <h2 className="text-base font-semibold tracking-tight text-foreground">
+                Quick access
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Jump directly to your most-used workspaces.
+              </p>
             </div>
+          </div>
 
-            <Separator className="bg-slate-800" />
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {modules.map((module) => {
+              const Icon = module.icon
+              return (
+                <Link
+                  key={module.href}
+                  href={module.href}
+                  className="group relative flex flex-col gap-3 overflow-hidden rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-sm)] transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[var(--shadow-md)]"
+                >
+                  <div
+                    className={`pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-br ${module.accent} opacity-60 transition-opacity group-hover:opacity-100`}
+                  />
+                  <div className="relative flex items-center justify-between">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background/80 text-foreground shadow-sm">
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
+                  </div>
+                  <div className="relative">
+                    <h3 className="text-sm font-semibold text-foreground">
+                      {module.title}
+                    </h3>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                      {module.description}
+                    </p>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
 
-            {/* Fraud Heatmap */}
-            <FraudHeatmap transactions={transactions} isLoading={loading} />
-
-            <Separator className="bg-slate-800" />
-
-            {/* Transfer Timeline */}
-            <TransferTimeline transactions={transactions} isLoading={loading} />
-
-            <EnterpriseOpportunityPanel
-              users={users}
-              accounts={accounts}
-              transactions={transactions}
-              isLoading={loading}
-            />
-          </TabsContent>
-
-          {/* ── Fraud Operations Tab ──────────────────────────────────────── */}
-          <TabsContent value="fraud" className="space-y-6 mt-0">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <FraudEventsPanel />
-              <TransferRequestsPanel />
-            </div>
-
-            <FraudAlerts alerts={fraudAlerts} isLoading={loading} />
-
-            <TransferTimeline transactions={fraudAlerts} isLoading={loading} maxItems={20} />
-          </TabsContent>
-
-          {/* ── Analytics Tab ─────────────────────────────────────────────── */}
-          <TabsContent value="analytics" className="space-y-6 mt-0">
-            <BehaviourAnalytics transactions={transactions} isLoading={loading} />
-
-            <Separator className="bg-slate-800" />
-
-            <FraudHeatmap transactions={transactions} isLoading={loading} />
-
-            <Separator className="bg-slate-800" />
-
-            <CustomerSegments />
-          </TabsContent>
-
-          {/* ── Demo Mode Tab ─────────────────────────────────────────────── */}
-          <TabsContent value="demo" className="mt-0">
-            <DemoModePanel />
-          </TabsContent>
-        </Tabs>
-      </main>
-
-      {/* Floating AI Copilot */}
-      <AICopilot />
+        <FraudAlerts alerts={fraudAlerts} isLoading={loading} />
+        <TransactionMonitor transactions={transactions} isLoading={loading} />
+      </section>
     </div>
-  );
+  )
 }

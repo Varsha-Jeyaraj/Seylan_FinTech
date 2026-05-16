@@ -1,135 +1,164 @@
-'use client';
+'use client'
 
-import { Transaction } from '@/lib/supabase';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, XCircle, Clock, Brain, AlertTriangle, ArrowRight } from 'lucide-react';
+import { Transaction } from '@/lib/supabase'
+import { Card } from '@/components/ui/card'
+import {
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Brain,
+  AlertTriangle,
+  GitBranch,
+} from 'lucide-react'
 
 interface TransferTimelineProps {
-  transactions: Transaction[];
-  isLoading?: boolean;
-  maxItems?: number;
+  transactions: Transaction[]
+  isLoading?: boolean
+  maxItems?: number
 }
 
 function statusIcon(status: Transaction['block_status'], fraudScore: number) {
-  if (status === 'blocked') return <XCircle className="h-4 w-4 text-red-400" />;
-  if (status === 'pending') return <Clock className="h-4 w-4 text-amber-400" />;
-  if (fraudScore > 0.4) return <AlertTriangle className="h-4 w-4 text-orange-400" />;
-  return <CheckCircle2 className="h-4 w-4 text-emerald-400" />;
+  if (status === 'blocked')
+    return <XCircle className="h-4 w-4 text-red-500" />
+  if (status === 'pending')
+    return <Clock className="h-4 w-4 text-amber-500" />
+  if (fraudScore > 0.4)
+    return <AlertTriangle className="h-4 w-4 text-orange-500" />
+  return <CheckCircle2 className="h-4 w-4 text-emerald-500" />
 }
 
-function statusColor(status: Transaction['block_status'], fraudScore: number): string {
-  if (status === 'blocked') return 'bg-red-700 text-red-100';
-  if (status === 'pending') return 'bg-amber-700 text-amber-100';
-  if (fraudScore > 0.4) return 'bg-orange-700 text-orange-100';
-  return 'bg-emerald-700 text-emerald-100';
+function statusPill(status: Transaction['block_status'], fraudScore: number) {
+  const base =
+    'inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1 ring-inset'
+  if (status === 'blocked')
+    return `${base} bg-red-500/10 text-red-600 ring-red-500/30 dark:text-red-400`
+  if (status === 'pending')
+    return `${base} bg-amber-500/10 text-amber-600 ring-amber-500/30 dark:text-amber-400`
+  if (fraudScore > 0.4)
+    return `${base} bg-orange-500/10 text-orange-600 ring-orange-500/30 dark:text-orange-400`
+  return `${base} bg-emerald-500/10 text-emerald-600 ring-emerald-500/30 dark:text-emerald-400`
 }
 
-function statusLabel(status: Transaction['block_status'], fraudScore: number): string {
-  if (status === 'blocked') return 'BLOCKED';
-  if (status === 'pending') return 'REVIEW';
-  if (fraudScore > 0.4) return 'FLAGGED';
-  return 'APPROVED';
+function statusLabel(status: Transaction['block_status'], fraudScore: number) {
+  if (status === 'blocked') return 'Blocked'
+  if (status === 'pending') return 'Review'
+  if (fraudScore > 0.4) return 'Flagged'
+  return 'Approved'
 }
 
 function riskBar(score: number) {
-  const w = `${score * 100}%`;
+  const w = `${score * 100}%`
   const color =
-    score >= 0.8 ? 'bg-red-500' :
-    score >= 0.6 ? 'bg-orange-500' :
-    score >= 0.35 ? 'bg-yellow-500' : 'bg-emerald-500';
+    score >= 0.8
+      ? 'bg-red-500'
+      : score >= 0.6
+        ? 'bg-orange-500'
+        : score >= 0.35
+          ? 'bg-amber-500'
+          : 'bg-emerald-500'
 
   return (
     <div className="flex items-center gap-1.5">
-      <div className="h-1 flex-1 bg-slate-700 rounded-full overflow-hidden">
-        <div className={`h-full rounded-full ${color}`} style={{ width: w, transition: 'width 0.4s ease' }} />
+      <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted">
+        <div
+          className={`h-full rounded-full ${color}`}
+          style={{ width: w, transition: 'width 0.4s ease' }}
+        />
       </div>
-      <span className="text-[10px] font-mono text-slate-400 w-8 text-right">
+      <span className="w-8 text-right font-mono text-[10px] tabular-nums text-muted-foreground">
         {(score * 100).toFixed(0)}%
       </span>
     </div>
-  );
+  )
 }
 
-export default function TransferTimeline({ transactions, isLoading, maxItems = 15 }: TransferTimelineProps) {
-  const items = transactions.slice(0, maxItems);
-
-  if (isLoading) {
-    return (
-      <Card className="bg-slate-900 border-slate-700">
-        <CardHeader>
-          <CardTitle className="text-sm text-white">Transfer Investigation Timeline</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {[1, 2, 3].map((i) => <div key={i} className="h-16 bg-slate-800 animate-pulse rounded" />)}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+export default function TransferTimeline({
+  transactions,
+  isLoading,
+  maxItems = 15,
+}: TransferTimelineProps) {
+  const items = transactions.slice(0, maxItems)
 
   return (
-    <Card className="bg-slate-900 border-slate-700">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm text-white">Transfer Investigation Timeline</CardTitle>
-          <Badge className="bg-slate-700 text-slate-300 text-xs">{items.length} events</Badge>
+    <Card className="overflow-hidden border-border bg-card p-0 shadow-[var(--shadow-sm)]">
+      <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400">
+            <GitBranch className="h-4 w-4" />
+          </span>
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">
+              Transfer investigation timeline
+            </h2>
+            <p className="text-[11px] text-muted-foreground">
+              Chronological decision trail
+            </p>
+          </div>
         </div>
-      </CardHeader>
+        <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+          {items.length} events
+        </span>
+      </div>
 
-      <CardContent>
-        {items.length === 0 ? (
-          <p className="text-sm text-slate-500 text-center py-8">No transactions to display</p>
+      <div className="px-5 py-4">
+        {isLoading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-16 animate-pulse rounded bg-muted/60" />
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            No transactions to display
+          </p>
         ) : (
           <div className="relative">
-            {/* Vertical line */}
-            <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-700" />
+            <div className="absolute bottom-0 left-4 top-0 w-px bg-border" />
 
             <div className="space-y-0">
-              {items.map((tx, i) => (
-                <div key={tx.id} className="flex gap-3 relative pb-4 last:pb-0">
-                  {/* Node */}
-                  <div className="relative z-10 flex-shrink-0 mt-1">
-                    <div className="h-8 w-8 rounded-full bg-slate-800 border border-slate-600 flex items-center justify-center">
+              {items.map((tx) => (
+                <div
+                  key={tx.id}
+                  className="relative flex gap-3 pb-4 last:pb-0"
+                >
+                  <div className="relative z-10 mt-1 shrink-0">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card shadow-sm">
                       {statusIcon(tx.block_status, tx.fraud_score)}
                     </div>
                   </div>
 
-                  {/* Content */}
-                  <div className="flex-1 bg-slate-800/60 rounded-lg border border-slate-700/50 p-3 min-w-0">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-sm font-semibold text-white">
+                  <div className="min-w-0 flex-1 rounded-lg border border-border bg-background/40 p-3">
+                    <div className="mb-2 flex items-start justify-between gap-2">
+                      <div className="flex min-w-0 items-baseline gap-2">
+                        <span className="text-sm font-semibold tabular-nums text-foreground">
                           LKR {tx.amount.toLocaleString()}
                         </span>
-                        <span className="text-xs text-slate-500 font-mono truncate">
+                        <span className="truncate font-mono text-[11px] text-muted-foreground">
                           {tx.transaction_type}
                         </span>
                       </div>
-                      <Badge className={`${statusColor(tx.block_status, tx.fraud_score)} text-xs flex-shrink-0`}>
+                      <span className={statusPill(tx.block_status, tx.fraud_score)}>
                         {statusLabel(tx.block_status, tx.fraud_score)}
-                      </Badge>
+                      </span>
                     </div>
 
-                    {/* Risk bar */}
                     {riskBar(tx.fraud_score)}
 
-                    {/* AI reasoning */}
                     {tx.fraud_score > 0.3 && tx.explanation && (
-                      <div className="flex items-start gap-1.5 mt-2">
-                        <Brain className="h-3 w-3 text-violet-400 mt-0.5 flex-shrink-0" />
-                        <p className="text-[11px] text-slate-400 leading-tight line-clamp-2">
+                      <div className="mt-2 flex items-start gap-1.5">
+                        <Brain className="mt-0.5 h-3 w-3 shrink-0 text-violet-500 dark:text-violet-400" />
+                        <p className="line-clamp-2 text-[11px] leading-tight text-muted-foreground">
                           {Array.isArray((tx.explanation as any)?.reasons)
                             ? (tx.explanation as any).reasons[0]
-                            : typeof tx.explanation === 'object' && (tx.explanation as any)?.riskFactors?.[0]
+                            : typeof tx.explanation === 'object' &&
+                                (tx.explanation as any)?.riskFactors?.[0]
                               ? (tx.explanation as any).riskFactors[0]
                               : 'AI risk signal detected'}
                         </p>
                       </div>
                     )}
 
-                    <p className="text-[10px] text-slate-600 mt-2">
+                    <p className="mt-2 text-[10px] text-muted-foreground/80">
                       {new Date(tx.timestamp).toLocaleString()}
                     </p>
                   </div>
@@ -138,7 +167,7 @@ export default function TransferTimeline({ transactions, isLoading, maxItems = 1
             </div>
           </div>
         )}
-      </CardContent>
+      </div>
     </Card>
-  );
+  )
 }
